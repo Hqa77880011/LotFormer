@@ -1,0 +1,7 @@
+{
+  "width": 32,
+  "inducing": 8,
+  "prefix_fraction": 0.25,
+  "cap": 2.5,
+  "low_yield": 0.7
+}
