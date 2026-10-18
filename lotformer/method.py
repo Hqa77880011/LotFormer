@@ -33,6 +33,7 @@ class Model(nn.Module):
         mean=(samples.mean(-1)*pi).sum(-1);flat=samples.flatten(1);mass=pi[:,:,None].expand_as(samples).flatten(1)/64;order=flat.argsort(-1);sorted_sample=flat.gather(1,order);cdf=mass.gather(1,order).cumsum(-1)
         quantile=lambda t:sorted_sample.gather(1,(cdf<t).sum(-1,keepdim=True).clamp_max(flat.shape[1]-1)).squeeze(-1)
         threshold=self.c.get('low_yield',.7);coordinate=((threshold-lower)/delta.clamp_min(1e-6)).clamp(1e-6,1-1e-6);risk=(pi*torch.special.ndtr((torch.logit(coordinate)[:,None]-mu)/sigma)).sum(-1)
+        risk=torch.where(delta<=1e-6,(lower<threshold).to(risk.dtype),torch.where(threshold<=lower,torch.zeros_like(risk),torch.where(threshold>=upper,torch.ones_like(risk),risk)))
         return {'prediction':mean,'lower':quantile(.05),'upper':quantile(.95),'mixture_pi':pi,'mixture_mu':mu,'mixture_sigma':sigma,'bound_lower':lower,'bound_upper':upper,'reliability':q.squeeze(-1),'samples':flat,'sample_weight':mass,'low_yield_probability':risk,'prefix_length':torch.full((n,1),k,device=x.device)}
     def forward(self,b):
         total=b['x'].shape[1];fraction=self.c.get('prefix_fraction',.25)
